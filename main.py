@@ -32,32 +32,32 @@ def get_salaries_superJob(superjob_token):
     MOSCOW_ID = 4
     VACANCIES_PER_PAGE = 100
     prog_lang_vacancies = {}
-    prog_langs_keys = ['JavaScript', 'Java', 'Python',
-                       'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
+    prog_langs = ['JavaScript', 'Java', 'Python',
+                  'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
     url = 'https://api.superjob.ru/2.0/vacancies/'
     headers = {'X-Api-App-Id': superjob_token}
     params = {
-        'keyword': '',
+        'prog_langword': '',
         'profession_only': 1,
         'town': MOSCOW_ID,
         'page': 0,
         'count': VACANCIES_PER_PAGE
     }
-    for key in prog_langs_keys:
-        params['keyword'] = f'программист {key}'
+    for prog_lang in prog_langs:
+        params['prog_langword'] = f'программист {prog_lang}'
         params['page'] = 0
         response = requests.get(url, headers=headers, params=params)
         vacancies = response.json()
 
-        prog_lang_vacancies[key] = {}
-        prog_lang_vacancies[key]['vacancies_found'] = vacancies['total']
-        prog_lang_vacancies[key]['vacancies_processed'] = 0
-        prog_lang_vacancies[key]['average_salary'] = 0
+        prog_lang_vacancies[prog_lang] = {}
+        prog_lang_vacancies[prog_lang]['vacancies_found'] = vacancies['total']
+        prog_lang_vacancies[prog_lang]['vacancies_processed'] = 0
+        prog_lang_vacancies[prog_lang]['average_salary'] = 0
 
         vacancies_arr = np.empty(shape=[1, 0])
         page = 0
         while True:
-            params['keyword'] = f'программист {key}'
+            params['prog_langword'] = f'программист {prog_lang}'
             params['page'] = page
             response = requests.get(url, headers=headers, params=params)
             vacancies = response.json()
@@ -71,8 +71,9 @@ def get_salaries_superJob(superjob_token):
             salary = salary[salary != np.array(None)]
 
             if len(salary) > 0:
-                prog_lang_vacancies[key]['vacancies_processed'] = len(salary)
-                prog_lang_vacancies[key]['average_salary'] = np.mean(
+                prog_lang_vacancies[prog_lang]['vacancies_processed'] = len(
+                    salary)
+                prog_lang_vacancies[prog_lang]['average_salary'] = np.mean(
                     salary, dtype='int64')
 
             page += 1
@@ -100,8 +101,8 @@ def get_salaries_hh():
     VACANCIES_PER_PAGE = 100
     SEARCH_PERIOD_DAYS = 30
     prog_lang_vacancies = {}
-    prog_langs_keys = ['JavaScript', 'Java', 'Python',
-                       'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
+    prog_langs = ['JavaScript', 'Java', 'Python',
+                  'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
     url = 'https://api.hh.ru/vacancies'
     params = {
         'text': '',
@@ -109,16 +110,16 @@ def get_salaries_hh():
         'search_period': SEARCH_PERIOD_DAYS,
         'per_page': VACANCIES_PER_PAGE
     }
-    for key in prog_langs_keys:
-        params['text'] = f'программист {key}'
+    for prog_lang in prog_langs:
+        params['text'] = f'программист {prog_lang}'
         response = requests.get(url, params=params)
         response.raise_for_status()
         vacancies = response.json()
 
-        prog_lang_vacancies[key] = {}
-        prog_lang_vacancies[key]['vacancies_found'] = vacancies['found']
-        prog_lang_vacancies[key]['vacancies_processed'] = 0
-        prog_lang_vacancies[key]['average_salary'] = 0
+        prog_lang_vacancies[prog_lang] = {}
+        prog_lang_vacancies[prog_lang]['vacancies_found'] = vacancies['found']
+        prog_lang_vacancies[prog_lang]['vacancies_processed'] = 0
+        prog_lang_vacancies[prog_lang]['average_salary'] = 0
 
         vacancies_arr = np.empty(shape=[1, 0])
         pages = vacancies['pages']
@@ -136,16 +137,16 @@ def get_salaries_hh():
         salary = salary[salary != np.array(None)]
 
         if len(salary) > 0:
-            prog_lang_vacancies[key]['average_salary'] = np.mean(
+            prog_lang_vacancies[prog_lang]['average_salary'] = np.mean(
                 salary, dtype='int64')
-            prog_lang_vacancies[key]['vacancies_processed'] = len(salary)
+            prog_lang_vacancies[prog_lang]['vacancies_processed'] = len(salary)
 
     return prog_lang_vacancies
 
 
 if __name__ == '__main__':
     load_dotenv()
-    superjob_token = os.environ['SUPERJOB_API_KEY']
+    superjob_token = os.environ['SUPERJOB_API_prog_lang']
 
     salaries_superJob = get_salaries_superJob(superjob_token)
     draw_table(salaries_superJob, 'SuperJob Moscow')
