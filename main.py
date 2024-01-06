@@ -44,26 +44,23 @@ def get_salaries_for_superJob(superjob_token):
         'page': 0,
         'count': vacancies_per_page
     }
+
     for language in programming_languages:
         params['keyword'] = f'программист {language}'
-        params['page'] = 0
-        response = requests.get(url, headers=headers, params=params)
-        vacancies = response.json()
-
         vacancies_stats[language] = {
             'vacancies_found': 0,
             'vacancies_processed': 0,
             'average_salary': 0
         }
-        vacancies_stats[language]['vacancies_found'] = vacancies['total']
 
         vacancies_arr = np.empty(shape=[1, 0])
         page = 0
         while True:
-            params['keyword'] = f'программист {language}'
             params['page'] = page
             response = requests.get(url, headers=headers, params=params)
             vacancies = response.json()
+            vacancies_stats[language]['vacancies_found'] = vacancies['total']
+
             for i in range(len(vacancies['objects'])):
                 vacancies_arr = np.append(vacancies_arr,
                                           vacancies['objects'][i])
@@ -102,7 +99,7 @@ def predict_rub_salary(vacancy):
 def get_salaries_for_hh():
     moscow_id = 1
     vacancies_per_page = 100
-    SEARCH_PERIOD_DAYS = 30
+    search_period_days = 30
     vacancies_stats = {}
     programming_languages = ['JavaScript', 'Java', 'Python',
                              'Ruby', 'PHP', 'C++', 'C#', 'C',
@@ -111,32 +108,33 @@ def get_salaries_for_hh():
     params = {
         'text': '',
         'area': moscow_id,
-        'search_period': SEARCH_PERIOD_DAYS,
+        'search_period': search_period_days,
         'per_page': vacancies_per_page
     }
+
     for language in programming_languages:
         params['text'] = f'программист {language}'
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        vacancies = response.json()
-
         vacancies_stats[language] = {
             'vacancies_found': 0,
             'vacancies_processed': 0,
             'average_salary': 0
         }
-        vacancies_stats[language]['vacancies_found'] = vacancies['found']
 
         vacancies_arr = np.empty(shape=[1, 0])
-        pages = vacancies['pages']
-        for page in range(pages):
+        page = 0
+        while True:
             params['page'] = page
             response = requests.get(url, params=params)
             response.raise_for_status()
             vacancies = response.json()
+            vacancies_stats[language]['vacancies_found'] = vacancies['found']
+
             for i in range(len(vacancies['items'])):
                 vacancies_arr = np.append(vacancies_arr,
                                           vacancies['items'][i]['salary'])
+            page += 1
+            if page == vacancies['pages']:
+                break
 
         vacancies_arr = vacancies_arr[vacancies_arr != np.array(None)]
         salary = np.array(list(map(predict_rub_salary, vacancies_arr)))
@@ -152,7 +150,7 @@ def get_salaries_for_hh():
 
 def main():
     load_dotenv()
-    superjob_token = os.environ['SUPERJOB_API_language']
+    superjob_token = os.environ['SUPERJOB_API_KEY']
 
     salaries_superJob = get_salaries_for_superJob(superjob_token)
     draw_table(salaries_superJob, 'SuperJob Moscow')
