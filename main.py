@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 
 
 def draw_table(stats, table_title):
-    TABLE_DATA = [('Язык программирования', 'Вакансий найдено',
+    table_data = [('Язык программирования', 'Вакансий найдено',
                    'Вакансий обработано', 'Средняя зарплата')]
-    TABLE_DATA += [(k, *v.values()) for k, v in stats.items()]
-    table_instance = AsciiTable(TABLE_DATA, table_title)
+    table_data += [(k, *v.values()) for k, v in stats.items()]
+    table_instance = AsciiTable(table_data, table_title)
     print(table_instance.table)
     print()
 
@@ -28,36 +28,39 @@ def predict_rub_salary_for_superJob(vacancy):
         return (vacancy['payment_to'] + vacancy['payment_from']) // 2
 
 
-def get_salaries_superJob(superjob_token):
-    MOSCOW_ID = 4
-    VACANCIES_PER_PAGE = 100
-    prog_lang_vacancies = {}
-    prog_langs = ['JavaScript', 'Java', 'Python',
-                  'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
+def get_salaries_for_superJob(superjob_token):
+    moscow_id = 4
+    vacancies_per_page = 100
+    vacancies_stats = {}
+    programming_languages = ['JavaScript', 'Java', 'Python',
+                             'Ruby', 'PHP', 'C++', 'C#', 'C',
+                             'Go', 'Swift', 'Scala']
     url = 'https://api.superjob.ru/2.0/vacancies/'
     headers = {'X-Api-App-Id': superjob_token}
     params = {
-        'prog_langword': '',
+        'keyword': '',
         'profession_only': 1,
-        'town': MOSCOW_ID,
+        'town': moscow_id,
         'page': 0,
-        'count': VACANCIES_PER_PAGE
+        'count': vacancies_per_page
     }
-    for prog_lang in prog_langs:
-        params['prog_langword'] = f'программист {prog_lang}'
+    for language in programming_languages:
+        params['keyword'] = f'программист {language}'
         params['page'] = 0
         response = requests.get(url, headers=headers, params=params)
         vacancies = response.json()
 
-        prog_lang_vacancies[prog_lang] = {}
-        prog_lang_vacancies[prog_lang]['vacancies_found'] = vacancies['total']
-        prog_lang_vacancies[prog_lang]['vacancies_processed'] = 0
-        prog_lang_vacancies[prog_lang]['average_salary'] = 0
+        vacancies_stats[language] = {
+            'vacancies_found': 0,
+            'vacancies_processed': 0,
+            'average_salary': 0
+        }
+        vacancies_stats[language]['vacancies_found'] = vacancies['total']
 
         vacancies_arr = np.empty(shape=[1, 0])
         page = 0
         while True:
-            params['prog_langword'] = f'программист {prog_lang}'
+            params['keyword'] = f'программист {language}'
             params['page'] = page
             response = requests.get(url, headers=headers, params=params)
             vacancies = response.json()
@@ -71,15 +74,15 @@ def get_salaries_superJob(superjob_token):
             salary = salary[salary != np.array(None)]
 
             if len(salary) > 0:
-                prog_lang_vacancies[prog_lang]['vacancies_processed'] = len(
+                vacancies_stats[language]['vacancies_processed'] = len(
                     salary)
-                prog_lang_vacancies[prog_lang]['average_salary'] = np.mean(
+                vacancies_stats[language]['average_salary'] = np.mean(
                     salary, dtype='int64')
 
             page += 1
             if not vacancies['more']:
                 break
-    return prog_lang_vacancies
+    return vacancies_stats
 
 
 def predict_rub_salary(vacancy):
@@ -96,30 +99,33 @@ def predict_rub_salary(vacancy):
         return (vacancy['to'] + vacancy['from']) // 2
 
 
-def get_salaries_hh():
-    MOSCOW_ID = 1
-    VACANCIES_PER_PAGE = 100
+def get_salaries_for_hh():
+    moscow_id = 1
+    vacancies_per_page = 100
     SEARCH_PERIOD_DAYS = 30
-    prog_lang_vacancies = {}
-    prog_langs = ['JavaScript', 'Java', 'Python',
-                  'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
+    vacancies_stats = {}
+    programming_languages = ['JavaScript', 'Java', 'Python',
+                             'Ruby', 'PHP', 'C++', 'C#', 'C',
+                             'Go', 'Swift', 'Scala']
     url = 'https://api.hh.ru/vacancies'
     params = {
         'text': '',
-        'area': MOSCOW_ID,
+        'area': moscow_id,
         'search_period': SEARCH_PERIOD_DAYS,
-        'per_page': VACANCIES_PER_PAGE
+        'per_page': vacancies_per_page
     }
-    for prog_lang in prog_langs:
-        params['text'] = f'программист {prog_lang}'
+    for language in programming_languages:
+        params['text'] = f'программист {language}'
         response = requests.get(url, params=params)
         response.raise_for_status()
         vacancies = response.json()
 
-        prog_lang_vacancies[prog_lang] = {}
-        prog_lang_vacancies[prog_lang]['vacancies_found'] = vacancies['found']
-        prog_lang_vacancies[prog_lang]['vacancies_processed'] = 0
-        prog_lang_vacancies[prog_lang]['average_salary'] = 0
+        vacancies_stats[language] = {
+            'vacancies_found': 0,
+            'vacancies_processed': 0,
+            'average_salary': 0
+        }
+        vacancies_stats[language]['vacancies_found'] = vacancies['found']
 
         vacancies_arr = np.empty(shape=[1, 0])
         pages = vacancies['pages']
@@ -137,19 +143,23 @@ def get_salaries_hh():
         salary = salary[salary != np.array(None)]
 
         if len(salary) > 0:
-            prog_lang_vacancies[prog_lang]['average_salary'] = np.mean(
+            vacancies_stats[language]['average_salary'] = np.mean(
                 salary, dtype='int64')
-            prog_lang_vacancies[prog_lang]['vacancies_processed'] = len(salary)
+            vacancies_stats[language]['vacancies_processed'] = len(salary)
 
-    return prog_lang_vacancies
+    return vacancies_stats
+
+
+def main():
+    load_dotenv()
+    superjob_token = os.environ['SUPERJOB_API_language']
+
+    salaries_superJob = get_salaries_for_superJob(superjob_token)
+    draw_table(salaries_superJob, 'SuperJob Moscow')
+
+    salaries_hh = get_salaries_for_hh()
+    draw_table(salaries_hh, 'HeadHunter Moscow')
 
 
 if __name__ == '__main__':
-    load_dotenv()
-    superjob_token = os.environ['SUPERJOB_API_prog_lang']
-
-    salaries_superJob = get_salaries_superJob(superjob_token)
-    draw_table(salaries_superJob, 'SuperJob Moscow')
-
-    salaries_hh = get_salaries_hh()
-    draw_table(salaries_hh, 'HeadHunter Moscow')
+    main()
