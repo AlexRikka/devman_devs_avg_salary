@@ -29,6 +29,8 @@ def predict_rub_salary_for_superJob(vacancy):
 
 
 def get_salaries_superJob(superjob_token):
+    MOSCOW_ID = 4
+    VACANCIES_PER_PAGE = 100
     prog_lang_vacancies = {}
     prog_langs_keys = ['JavaScript', 'Java', 'Python',
                        'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
@@ -37,9 +39,9 @@ def get_salaries_superJob(superjob_token):
     params = {
         'keyword': '',
         'profession_only': 1,
-        'town': 4,
+        'town': MOSCOW_ID,
         'page': 0,
-        'count': 100
+        'count': VACANCIES_PER_PAGE
     }
     for key in prog_langs_keys:
         params['keyword'] = f'программист {key}'
@@ -94,15 +96,18 @@ def predict_rub_salary(vacancy):
 
 
 def get_salaries_hh():
+    MOSCOW_ID = 1
+    VACANCIES_PER_PAGE = 100
+    SEARCH_PERIOD_DAYS = 30
     prog_lang_vacancies = {}
     prog_langs_keys = ['JavaScript', 'Java', 'Python',
                        'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift', 'Scala']
     url = 'https://api.hh.ru/vacancies'
     params = {
         'text': '',
-        'area': 1,  # Москва
-        'search_period': 30,  # дни
-        'per_page': 100
+        'area': MOSCOW_ID,
+        'search_period': SEARCH_PERIOD_DAYS,
+        'per_page': VACANCIES_PER_PAGE
     }
     for key in prog_langs_keys:
         params['text'] = f'программист {key}'
