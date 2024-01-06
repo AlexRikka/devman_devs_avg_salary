@@ -6,7 +6,7 @@
 
 Скачайте репозиторий и установите Python пакеты из `requirements.txt`:
 ```bash
-git clone https://github.com/AlexRikka/devman_space_images_bot.git
+git clone https://github.com/AlexRikka/devman_devs_avg_salary.git
 cd devman_space_images_bot
 pip install -r requirements.txt
 ```
