@@ -74,9 +74,8 @@ def get_salaries_for_superJob(superjob_token):
             vacancies = response.json()
             vacancies_stats[language]['vacancies_found'] = vacancies['total']
 
-            for i in range(len(vacancies['objects'])):
-                salary = predict_rub_salary_for_superJob(
-                    vacancies['objects'][i])
+            for vacancy in vacancies['objects']:
+                salary = predict_rub_salary_for_superJob(vacancy)
                 if salary:
                     salary_summ += salary
                     salary_count += 1
@@ -126,9 +125,9 @@ def get_salaries_for_hh():
             vacancies = response.json()
             vacancies_stats[language]['vacancies_found'] = vacancies['found']
 
-            for i in range(len(vacancies['items'])):
+            for vacancy in vacancies['items']:
                 salary = predict_rub_salary_for_hh(
-                    vacancies['items'][i]['salary'])
+                    vacancy['salary'])
                 if salary:
                     salary_summ += salary
                     salary_count += 1
