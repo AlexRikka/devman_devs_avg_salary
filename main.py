@@ -13,18 +13,30 @@ def draw_table(stats, table_title):
     print()
 
 
-def predict_rub_salary_for_superJob(vacancy):
-    if vacancy is None or vacancy['currency'] != 'rub':
+def predict_rub_salary(salary_from, salary_to):
+    if salary_from and salary_to:
+        return (salary_to + salary_from) // 2
+    elif salary_to:
+        return int(salary_to*0.8)
+    elif salary_from:
+        return int(salary_from*1.2)
+    else:
         return None
 
-    if vacancy['payment_from'] == 0 and vacancy['payment_to'] == 0:
-        return None
-    elif vacancy['payment_from'] == 0:
-        return int(vacancy['payment_to']*0.8)
-    elif vacancy['payment_to'] == 0:
-        return int(vacancy['payment_from']*1.2)
+
+def predict_rub_salary_for_superJob(vacancy):
+    if vacancy and vacancy['currency'] == 'rub':
+        return predict_rub_salary(vacancy['payment_from'],
+                                  vacancy['payment_to'])
     else:
-        return (vacancy['payment_to'] + vacancy['payment_from']) // 2
+        return None
+
+
+def predict_rub_salary_for_hh(vacancy):
+    if vacancy and vacancy['currency'] == 'RUR':
+        return predict_rub_salary(vacancy['from'], vacancy['to'])
+    else:
+        return None
 
 
 def get_salaries_for_superJob(superjob_token):
@@ -80,20 +92,6 @@ def get_salaries_for_superJob(superjob_token):
     return vacancies_stats
 
 
-def predict_rub_salary(vacancy):
-    if vacancy is None or vacancy['currency'] != 'RUR':
-        return None
-
-    if vacancy['from'] is None and vacancy['to'] is None:
-        return None
-    elif vacancy['from'] is None:
-        return int(vacancy['to']*0.8)
-    elif vacancy['to'] is None:
-        return int(vacancy['from']*1.2)
-    else:
-        return (vacancy['to'] + vacancy['from']) // 2
-
-
 def get_salaries_for_hh():
     moscow_id = 1
     vacancies_per_page = 100
@@ -129,7 +127,8 @@ def get_salaries_for_hh():
             vacancies_stats[language]['vacancies_found'] = vacancies['found']
 
             for i in range(len(vacancies['items'])):
-                salary = predict_rub_salary(vacancies['items'][i]['salary'])
+                salary = predict_rub_salary_for_hh(
+                    vacancies['items'][i]['salary'])
                 if salary:
                     salary_summ += salary
                     salary_count += 1
