@@ -1,6 +1,5 @@
 import os
 import requests
-import numpy as np
 from terminaltables import AsciiTable
 from dotenv import load_dotenv
 
@@ -53,32 +52,31 @@ def get_salaries_for_superJob(superjob_token):
             'average_salary': 0
         }
 
-        vacancies_arr = np.empty(shape=[1, 0])
+        salary_summ = 0
+        salary_count = 0
         page = 0
         while True:
             params['page'] = page
             response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
             vacancies = response.json()
             vacancies_stats[language]['vacancies_found'] = vacancies['total']
 
             for i in range(len(vacancies['objects'])):
-                vacancies_arr = np.append(vacancies_arr,
-                                          vacancies['objects'][i])
-
-            vacancies_arr = vacancies_arr[vacancies_arr != np.array(None)]
-            salary = np.array(
-                list(map(predict_rub_salary_for_superJob, vacancies_arr)))
-            salary = salary[salary != np.array(None)]
-
-            if len(salary) > 0:
-                vacancies_stats[language]['vacancies_processed'] = len(
-                    salary)
-                vacancies_stats[language]['average_salary'] = np.mean(
-                    salary, dtype='int64')
+                salary = predict_rub_salary_for_superJob(
+                    vacancies['objects'][i])
+                if salary:
+                    salary_summ += salary
+                    salary_count += 1
 
             page += 1
             if not vacancies['more']:
                 break
+
+        vacancies_stats[language]['vacancies_processed'] = salary_count
+        vacancies_stats[language]['average_salary'] = salary_summ // \
+            salary_count if salary_count != 0 else 0
+
     return vacancies_stats
 
 
@@ -120,7 +118,8 @@ def get_salaries_for_hh():
             'average_salary': 0
         }
 
-        vacancies_arr = np.empty(shape=[1, 0])
+        salary_summ = 0
+        salary_count = 0
         page = 0
         while True:
             params['page'] = page
@@ -130,20 +129,18 @@ def get_salaries_for_hh():
             vacancies_stats[language]['vacancies_found'] = vacancies['found']
 
             for i in range(len(vacancies['items'])):
-                vacancies_arr = np.append(vacancies_arr,
-                                          vacancies['items'][i]['salary'])
+                salary = predict_rub_salary(vacancies['items'][i]['salary'])
+                if salary:
+                    salary_summ += salary
+                    salary_count += 1
+
             page += 1
             if page == vacancies['pages']:
                 break
 
-        vacancies_arr = vacancies_arr[vacancies_arr != np.array(None)]
-        salary = np.array(list(map(predict_rub_salary, vacancies_arr)))
-        salary = salary[salary != np.array(None)]
-
-        if len(salary) > 0:
-            vacancies_stats[language]['average_salary'] = np.mean(
-                salary, dtype='int64')
-            vacancies_stats[language]['vacancies_processed'] = len(salary)
+        vacancies_stats[language]['vacancies_processed'] = salary_count
+        vacancies_stats[language]['average_salary'] = salary_summ // \
+            salary_count if salary_count != 0 else 0
 
     return vacancies_stats
 
