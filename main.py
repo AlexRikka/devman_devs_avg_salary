@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 
 
 def draw_table(stats, table_title):
-    table_data = [('Язык программирования', 'Вакансий найдено',
-                   'Вакансий обработано', 'Средняя зарплата')]
-    table_data += [(k, *v.values()) for k, v in stats.items()]
-    table_instance = AsciiTable(table_data, table_title)
+    salary_table = [('Язык программирования', 'Вакансий найдено',
+                     'Вакансий обработано', 'Средняя зарплата')]
+    salary_table += [(k, *v.values()) for k, v in stats.items()]
+    table_instance = AsciiTable(salary_table, table_title)
     print(table_instance.table)
     print()
 
