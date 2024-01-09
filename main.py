@@ -28,15 +28,11 @@ def predict_rub_salary_for_superJob(vacancy):
     if vacancy and vacancy['currency'] == 'rub':
         return predict_rub_salary(vacancy['payment_from'],
                                   vacancy['payment_to'])
-    else:
-        return None
 
 
 def predict_rub_salary_for_hh(vacancy):
     if vacancy and vacancy['currency'] == 'RUR':
         return predict_rub_salary(vacancy['from'], vacancy['to'])
-    else:
-        return None
 
 
 def get_salaries_for_superJob(superjob_token):
@@ -72,7 +68,6 @@ def get_salaries_for_superJob(superjob_token):
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             vacancies = response.json()
-            vacancies_stats[language]['vacancies_found'] = vacancies['total']
 
             for vacancy in vacancies['objects']:
                 salary = predict_rub_salary_for_superJob(vacancy)
@@ -84,9 +79,12 @@ def get_salaries_for_superJob(superjob_token):
             if not vacancies['more']:
                 break
 
-        vacancies_stats[language]['vacancies_processed'] = salary_count
-        vacancies_stats[language]['average_salary'] = salary_summ // \
-            salary_count if salary_count != 0 else 0
+        vacancies_stats[language] = {
+            'vacancies_found': vacancies['total'],
+            'vacancies_processed': salary_count,
+            'average_salary': salary_summ // salary_count
+            if salary_count else 0
+        }
 
     return vacancies_stats
 
@@ -123,7 +121,6 @@ def get_salaries_for_hh():
             response = requests.get(url, params=params)
             response.raise_for_status()
             vacancies = response.json()
-            vacancies_stats[language]['vacancies_found'] = vacancies['found']
 
             for vacancy in vacancies['items']:
                 salary = predict_rub_salary_for_hh(
@@ -136,9 +133,12 @@ def get_salaries_for_hh():
             if page == vacancies['pages']:
                 break
 
-        vacancies_stats[language]['vacancies_processed'] = salary_count
-        vacancies_stats[language]['average_salary'] = salary_summ // \
-            salary_count if salary_count != 0 else 0
+        vacancies_stats[language] = {
+            'vacancies_found': vacancies['found'],
+            'vacancies_processed': salary_count,
+            'average_salary': salary_summ // salary_count
+            if salary_count else 0
+        }
 
     return vacancies_stats
 
