@@ -54,11 +54,6 @@ def get_salaries_for_superJob(superjob_token):
 
     for language in programming_languages:
         params['keyword'] = f'программист {language}'
-        vacancies_stats[language] = {
-            'vacancies_found': 0,
-            'vacancies_processed': 0,
-            'average_salary': 0
-        }
 
         salary_summ = 0
         salary_count = 0
@@ -107,11 +102,6 @@ def get_salaries_for_hh():
 
     for language in programming_languages:
         params['text'] = f'программист {language}'
-        vacancies_stats[language] = {
-            'vacancies_found': 0,
-            'vacancies_processed': 0,
-            'average_salary': 0
-        }
 
         salary_summ = 0
         salary_count = 0
